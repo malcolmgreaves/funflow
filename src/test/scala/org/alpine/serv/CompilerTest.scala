@@ -16,40 +16,40 @@ class CompilerTest extends FunSuite {
 
   test("simple compile") {
 
-    val funcStr = "(a:AlpFinalResult[Map[String,Int]]) => {println(a); a}"
+    val funcStr = "(a:WrapResult[Map[String,Int]]) => {println(a); a}"
     val compiler = new Compiler(None)
     val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr")
     val x = clazz.newInstance()
     println(s"loaded class: $x")
-    val a = AlpFinalResult(Map("hello" -> 1))
+    val a = WrapResult(Map("hello" -> 1))
     val prex = x.asInstanceOf[() => Any]
     println(s"cased class, prex: $prex")
     val res = prex.apply()
     println(s"prex.apply(): $res")
-    val xer = res.asInstanceOf[(AlpFinalResult[Map[String, Int]] => AlpFinalResult[Map[String, Int]])]
+    val xer = res.asInstanceOf[(WrapResult[Map[String, Int]] => WrapResult[Map[String, Int]])]
     xer.apply(a)
 
   }
 
   test("advanced compile: new operator + integration into workflow") {
 
-    val funcStr = """(a:AlpFinalResult[Map[String,Int]]) => {println("hello world!!!"); a}"""
+    val funcStr = """(a:WrapResult[Map[String,Int]]) => {println("hello world!!!"); a}"""
     val compiler = new Compiler(None)
     val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr")
     val func = clazz.newInstance().asInstanceOf[() => Any].apply()
-      .asInstanceOf[(AlpFinalResult[Map[String, Int]] => AlpFinalResult[Map[String, Int]])]
+      .asInstanceOf[(WrapResult[Map[String, Int]] => WrapResult[Map[String, Int]])]
     val newNode =
       NoConf(
         "dynamic yo!",
-        AlpOperator.fn2opNoConf(func)
-      ).asInstanceOf[NodeOperator[NoOpConf, AlpResult, AlpFinalResult[Map[String, Int]]]]
+        Operator.fn2opNoConf(func)
+      ).asInstanceOf[OperatorNode[NoOpConf, Result, WrapResult[Map[String, Int]]]]
 
-    val connections: Seq[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]] = {
+    val connections: Seq[Connection[_ <: OpConf, _ <: Result, _ <: Result]] = {
       val nm = nodeMap // + (newNode.id -> newNode)
       connectionsJson.map(s => JsonConnection.toConnection(nm, s).get)
     }
 
-    val newConnection: Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult] =
+    val newConnection: Connection[_ <: OpConf, _ <: Result, _ <: Result] =
       Connection.forOne(connections(connections.size - 1).destination, newNode) match {
         case Success(c) =>
           c
@@ -73,44 +73,44 @@ class CompilerTest extends FunSuite {
     println(s"result: $res")
   }
 
-  ignore("ultra advanced: new Result type operators integration at runtime"){
+  ignore("ultra advanced: new Result type operators integration at runtime") {
     val newNode1 = {
       val compiler = new Compiler(None)
       val funcStr1 =
         """
-          | case class NewAlpResult(m:Map[String,Int]) extends AlpResult
-          | (a:AlpFinalResult[Map[String,Int]]) => {println("hello world!!!"); NewAlpResult(a)}""".stripMargin.trim
+          | case class NewAlpResult(m:Map[String,Int]) extends Result
+          | (a:WrapResult[Map[String,Int]]) => {println("hello world!!!"); NewAlpResult(a)}""".stripMargin.trim
       val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr1")
       val func = clazz.newInstance().asInstanceOf[() => Any].apply()
-        .asInstanceOf[(AlpFinalResult[Map[String, Int]] => _ <: AlpResult)]
+        .asInstanceOf[(WrapResult[Map[String, Int]] => _ <: Result)]
       NoConf(
         "1 dynamic yo!",
-        AlpOperator.fn2opNoConf(func)
-      ).asInstanceOf[NodeOperator[NoOpConf, AlpResult, AlpResult]]
+        Operator.fn2opNoConf(func)
+      ).asInstanceOf[OperatorNode[NoOpConf, Result, Result]]
     }
 
     val newNode2 = {
       val compiler = new Compiler(None)
       val funcStr2 =
         """
-          | case class NewAlpResult(m:Map[String,Int]) extends AlpResult
+          | case class NewAlpResult(m:Map[String,Int]) extends Result
           | (a:NewAlpResult) => {println("whoa! this is pretty cool!"); a}
         """.stripMargin.trim
       val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr2")
       val func = clazz.newInstance().asInstanceOf[() => Any].apply()
-        .asInstanceOf[(AlpResult => _ <: AlpResult)]
+        .asInstanceOf[(Result => _ <: Result)]
       NoConf(
         "2 dynamic yo!",
-        AlpOperator.fn2opNoConf(func)
-      ).asInstanceOf[NodeOperator[NoOpConf, AlpResult, AlpResult]]
+        Operator.fn2opNoConf(func)
+      ).asInstanceOf[OperatorNode[NoOpConf, Result, Result]]
     }
 
-    val connections: Seq[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]] = {
+    val connections: Seq[Connection[_ <: OpConf, _ <: Result, _ <: Result]] = {
       val nm = nodeMap // + (newNode.id -> newNode)
       connectionsJson.map(s => JsonConnection.toConnection(nm, s).get)
     }
 
-    val newConnection1: Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult] =
+    val newConnection1: Connection[_ <: OpConf, _ <: Result, _ <: Result] =
       Connection.forOne(connections(connections.size - 1).destination, newNode1) match {
         case Success(c) =>
           c
@@ -118,7 +118,7 @@ class CompilerTest extends FunSuite {
           throw new Exception(s"Failed to create connection with new dynamically generated node: $e")
       }
 
-    val newConnection2: Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult] =
+    val newConnection2: Connection[_ <: OpConf, _ <: Result, _ <: Result] =
       Connection.forOne(newNode1, newNode2) match {
         case Success(c) =>
           c

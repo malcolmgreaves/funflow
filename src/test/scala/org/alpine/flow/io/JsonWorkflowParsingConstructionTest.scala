@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 import rapture.json._
 import jsonBackends.jackson._
 import scala.util.{ Failure, Success, Try }
-import org.alpine.flow.{ AlpNode, AlpResult }
+import org.alpine.flow.{ Node, Result }
 import org.apache.spark.sql.catalyst.errors
 import org.apache.spark.sql.catalyst
 
@@ -73,7 +73,7 @@ class JsonWorkflowParsingConstructionTest extends FunSuite {
 
   test("Instantiation: from JSON to Connections") {
 
-    val nodeMap: Map[String, AlpNode[_ <: AlpResult]] =
+    val nodeMap: Map[String, Node[_ <: Result]] =
       JsonNode.toNodeMap(nodesStr) match {
         case Success(nm) =>
           nm
@@ -183,7 +183,7 @@ object JsonWorkflowParsingConstructionTest {
     JsonConnection(Seq("tokenizer"), "dictionaryMaker")
   )
 
-  def nodeMap: Map[String, AlpNode[_ <: AlpResult]] =
+  def nodeMap: Map[String, Node[_ <: Result]] =
     JsonNode.toNodeMap(nodesStr) match {
       case Success(nm) =>
         nm

@@ -16,10 +16,10 @@ object NoOpConf {
 }
 
 /**
- * Abstract class describing alpine operators as functions from AlpResult to AlpResult
+ * Abstract class describing alpine operators as functions from Result to Result
  * Must be abstract instead of a trait so that we can use ClassTag
  */
-abstract class AlpOperator[C <: OpConf: Manifest, -I <: AlpResult: Manifest, +O <: AlpResult: Manifest] extends ((C, I) => O) {
+abstract class Operator[C <: OpConf: Manifest, -I <: Result: Manifest, +O <: Result: Manifest] extends ((C, I) => O) {
 
   /** Performs the operation on some input of type I, evaluating to an output of type O. */
   def apply(config: C, input: I): O
@@ -34,42 +34,42 @@ abstract class AlpOperator[C <: OpConf: Manifest, -I <: AlpResult: Manifest, +O 
   final val outputClass: Manifest[_ <: O] = manifest[O]
 }
 
-abstract class AlpOperatorNoConf[-I <: AlpResult: Manifest, +O <: AlpResult: Manifest] extends AlpOperator[NoOpConf, I, O] {
+abstract class OperatorNoConf[-I <: Result: Manifest, +O <: Result: Manifest] extends Operator[NoOpConf, I, O] {
   final def apply(ignored: NoOpConf, input: I): O = applyActual(input)
 
   protected def applyActual(input: I): O
 }
 
-/** Companion to the AlpOperator trait. Contains implicit conversion from function to AlpOperator */
-object AlpOperator {
+/** Companion to the Operator trait. Contains implicit conversion from function to Operator */
+object Operator {
 
-  implicit def fn2op[C <: OpConf: Manifest, I <: AlpResult: Manifest, O <: AlpResult: Manifest](
-    fn: (C, I) => O): AlpOperator[C, I, O] =
+  implicit def fn2op[C <: OpConf: Manifest, I <: Result: Manifest, O <: Result: Manifest](
+    fn: (C, I) => O): Operator[C, I, O] =
 
-    new AlpOperator[C, I, O] {
+    new Operator[C, I, O] {
       override def apply(config: C, input: I): O =
         fn(config, input)
     }
 
-  implicit def fn2opNoConf[I <: AlpResult: Manifest, O <: AlpResult: Manifest](fn: I => O): AlpOperatorNoConf[I, O] =
-    new AlpOperatorNoConf[I, O] {
+  implicit def fn2opNoConf[I <: Result: Manifest, O <: Result: Manifest](fn: I => O): OperatorNoConf[I, O] =
+    new OperatorNoConf[I, O] {
       override protected def applyActual(input: I): O =
         fn(input)
     }
 
-  implicit def fnTuple2[C <: OpConf: Manifest, A <: AlpResult: Manifest, B <: AlpResult: Manifest, Z <: AlpResult: Manifest](
-    fn: (C, A, B) => Z): AlpOperator[C, AlpResultTuple2[A, B], Z] =
+  implicit def fnTuple2[C <: OpConf: Manifest, A <: Result: Manifest, B <: Result: Manifest, Z <: Result: Manifest](
+    fn: (C, A, B) => Z): Operator[C, ResultTuple2[A, B], Z] =
 
-    new AlpOperator[C, AlpResultTuple2[A, B], Z] {
-      override def apply(config: C, input: AlpResultTuple2[A, B]): Z =
+    new Operator[C, ResultTuple2[A, B], Z] {
+      override def apply(config: C, input: ResultTuple2[A, B]): Z =
         fn(config, input._1, input._2)
     }
 
-  implicit def fnTuple3[CO <: OpConf: Manifest, A <: AlpResult: Manifest, B <: AlpResult: Manifest, C <: AlpResult: Manifest, Z <: AlpResult: Manifest](
-    fn: (CO, A, B, C) => Z): AlpOperator[CO, AlpResultTuple3[A, B, C], Z] =
+  implicit def fnTuple3[CO <: OpConf: Manifest, A <: Result: Manifest, B <: Result: Manifest, C <: Result: Manifest, Z <: Result: Manifest](
+    fn: (CO, A, B, C) => Z): Operator[CO, ResultTuple3[A, B, C], Z] =
 
-    new AlpOperator[CO, AlpResultTuple3[A, B, C], Z] {
-      override def apply(config: CO, input: AlpResultTuple3[A, B, C]): Z =
+    new Operator[CO, ResultTuple3[A, B, C], Z] {
+      override def apply(config: CO, input: ResultTuple3[A, B, C]): Z =
         fn(config, input._1, input._2, input._3)
     }
 
@@ -115,7 +115,7 @@ object LocalData2RDD {
   }
 }
 
-class LocalData2RDD extends AlpOperatorNoConf[LocalData, RDDAlpResult[String]] {
+class LocalData2RDD extends OperatorNoConf[LocalData, RDDAlpResult[String]] {
 
   import LocalData2RDD.sc
 
@@ -123,18 +123,18 @@ class LocalData2RDD extends AlpOperatorNoConf[LocalData, RDDAlpResult[String]] {
     RDDAlpResult(sc.textFile(input.path.getCanonicalPath))
 }
 
-case class RDDAlpResult[T](d: RDD[T]) extends AlpResult
+case class RDDAlpResult[T](d: RDD[T]) extends Result
 
-class String2TokensOp extends AlpOperatorNoConf[RDDAlpResult[String], RDDAlpResult[List[String]]] {
+class String2TokensOp extends OperatorNoConf[RDDAlpResult[String], RDDAlpResult[List[String]]] {
 
   override def applyActual(in: RDDAlpResult[String]): RDDAlpResult[List[String]] =
     RDDAlpResult(in.d.map(_.split(" ").toList))
 }
 
-class Tokens2DictOp extends AlpOperatorNoConf[RDDAlpResult[List[String]], AlpFinalResult[Map[String, Int]]] {
+class Tokens2DictOp extends OperatorNoConf[RDDAlpResult[List[String]], WrapResult[Map[String, Int]]] {
 
-  override def applyActual(input: RDDAlpResult[List[String]]): AlpFinalResult[Map[String, Int]] =
-    AlpFinalResult(
+  override def applyActual(input: RDDAlpResult[List[String]]): WrapResult[Map[String, Int]] =
+    WrapResult(
       input.d.aggregate(Map.empty[String, Int])(
         (m, tokens) =>
           tokens.foldLeft(m)(
@@ -157,9 +157,9 @@ class Tokens2DictOp extends AlpOperatorNoConf[RDDAlpResult[List[String]], AlpFin
 }
 
 abstract class JoinOp[A: ClassTag: Manifest, B: ClassTag: Manifest, C: ClassTag: Manifest]
-    extends AlpOperatorNoConf[AlpResultTuple2[RDDAlpResult[A], RDDAlpResult[B]], RDDAlpResult[C]] {
+    extends OperatorNoConf[ResultTuple2[RDDAlpResult[A], RDDAlpResult[B]], RDDAlpResult[C]] {
 
-  override final def applyActual(input: AlpResultTuple2[RDDAlpResult[A], RDDAlpResult[B]]): RDDAlpResult[C] =
+  override final def applyActual(input: ResultTuple2[RDDAlpResult[A], RDDAlpResult[B]]): RDDAlpResult[C] =
     RDDAlpResult(input._1.d.zip(input._2.d).flatMap(join))
 
   def join(input: (A, B)): Option[C]
@@ -172,4 +172,3 @@ class JoinStrEq extends JoinOp[String, String, String] {
     else
       None
 }
-

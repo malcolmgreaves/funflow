@@ -8,7 +8,7 @@ import java.security.MessageDigest
 import java.math.BigInteger
 import collection.mutable
 import java.io.File
-import org.alpine.flow.AlpFinalResult
+import org.alpine.flow.WrapResult
 
 class Compiler(targetDir: Option[File]) {
 
@@ -91,7 +91,7 @@ class Compiler(targetDir: Option[File]) {
 
 object Compilier {
 
-  val funcStr = "(a:AlpFinalResult[Map[String,Int]]) => println(a)"
+  val funcStr = "(a:WrapResult[Map[String,Int]]) => println(a)"
 
   def main(args: Array[String]) {
 
@@ -99,12 +99,12 @@ object Compilier {
     val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr")
     val x = clazz.newInstance()
     println(s"loaded class: $x")
-    val a = AlpFinalResult(Map("hello" -> 1))
+    val a = WrapResult(Map("hello" -> 1))
     val prex = (x.asInstanceOf[() => Any])
     println(s"cased class, prex: $prex")
     val res = prex.apply()
     println(s"prex.apply(): $res")
-    val xer = res.asInstanceOf[(AlpFinalResult[Map[String, Int]] => Unit)]
+    val xer = res.asInstanceOf[(WrapResult[Map[String, Int]] => Unit)]
     xer.apply(a)
 
   }
