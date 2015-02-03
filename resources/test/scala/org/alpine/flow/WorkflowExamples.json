@@ -1,0 +1,67 @@
+{
+    "flowName": "successful workflow",
+    "allNodes": [
+        {
+            "name": "node0",
+            "kind":"operator",
+            "nodeInfo": {
+                "conf":"",
+                "operator":"org.alpine.flow.JoinStrEq"
+            }
+        },
+        {
+            "name": "node1",
+            "kind" : {
+                "conf":{
+                    "parameter":"value"
+                },
+                "operator":"org.alpine.flow.???.class"
+            }
+        },
+        {
+            "name": "node2",
+            "kind" : "function",
+            "conf" : { "foo": "doo" },
+            "operator" : "???.class"
+        },
+        {
+            "name": "node3",
+            "kind" : {
+                "dataType": "Local",
+                "dataLoc": "file://path/to/data",
+                "special":""
+            }
+        },
+        {
+            "name": "node4",
+            "kind" : "data",
+            "conf" : "file://path/to/data",
+            "operator" : ""
+        },
+        {
+            "name": "node5",
+            "kind" : "function",
+            "conf" : "???",
+            "operator" : "tuple2_???.class"
+        }
+    ],
+    "connections" : [
+        {
+            "nodes" : [ "node3" , "node4" ],
+            "dest" : "node5"
+        },
+        {
+            "nodes" : [ "node1" ],
+            "dest" : "node2"
+        },
+        {
+            "nodes" : [ "node1" ],
+            "dest" : "node3"
+        },
+        {
+            "nodes" : [ "node0" ],
+            "dest" : "node1"
+        }
+    ]
+
+}

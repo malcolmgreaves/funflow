@@ -1,0 +1,49 @@
+{
+    "flowName": "tokenization workflow",
+    "nodes": [
+        {
+            "name": "project README",
+            "kind":"data",
+            "nodeInfo": {
+                "dataType":"Local",
+                "dataLoc":"./README.md"
+            }
+        },
+        {
+            "name": "to RDD",
+            "kind" : "pureOperator",
+            "nodeInfo" : {
+                "operator":"org.alpine.flow.LocalData2RDD"
+            }
+        },
+        {
+            "name": "tokenizer",
+            "kind" : "pureOperator",
+            "nodeInfo" : {
+                "operator":"org.alpine.flow.String2TokensOp"
+            }
+        },
+        {
+            "name": "dictionaryMaker",
+            "kind" : "pureOperator",
+            "nodeInfo" : {
+                "operator":"org.alpine.flow.Tokens2DictOp"
+            }
+        }
+    ],
+    "connections" : [
+        {
+          "nodes": ["project README"],
+          "dest":"to RDD"
+        },
+        {
+            "nodes" : [ "to RDD" ],
+            "dest" : "tokenizer"
+        },
+        {
+            "nodes" : [ "tokenizer" ],
+            "dest" : "dictionaryMaker"
+        }
+    ]
+
+}
