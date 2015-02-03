@@ -2,6 +2,7 @@
 target
 project
 projectFilesBackup
+coveralls_token
 
 ####    IDE
 .idea/*

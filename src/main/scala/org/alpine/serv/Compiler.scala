@@ -65,7 +65,7 @@ class Compiler(targetDir: Option[File]) {
   def findClass(className: String): Option[Class[_]] =
     synchronized {
       classCache.get(className) match {
-        case someClazz: Some[Class[_]] =>
+        case someClazz @ Some(_) =>
           someClazz
 
         case None =>
