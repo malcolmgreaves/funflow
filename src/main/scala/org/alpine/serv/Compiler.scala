@@ -88,25 +88,3 @@ class Compiler(targetDir: Option[File]) {
       "}\n"
   }
 }
-
-object Compilier {
-
-  val funcStr = "(a:WrapResult[Map[String,Int]]) => println(a)"
-
-  def main(args: Array[String]) {
-
-    val compiler = new Compiler(None)
-    val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr")
-    val x = clazz.newInstance()
-    println(s"loaded class: $x")
-    val a = WrapResult(Map("hello" -> 1))
-    val prex = (x.asInstanceOf[() => Any])
-    println(s"cased class, prex: $prex")
-    val res = prex.apply()
-    println(s"prex.apply(): $res")
-    val xer = res.asInstanceOf[(WrapResult[Map[String, Int]] => Unit)]
-    xer.apply(a)
-
-  }
-
-}
