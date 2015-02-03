@@ -1,5 +1,6 @@
 # funflow
 [![Build Status](https://travis-ci.org/malcolmgreaves/funflow.svg)](https://travis-ci.org/malcolmgreaves/funflow) [![Coverage Status](https://coveralls.io/repos/malcolmgreaves/funflow/badge.svg)](https://coveralls.io/r/malcolmgreaves/funflow)
+
 Provides a functional description of a workflow: a dependent series of big-data computations.
 
 
