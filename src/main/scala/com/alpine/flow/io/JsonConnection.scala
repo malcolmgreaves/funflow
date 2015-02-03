@@ -20,12 +20,12 @@ object JsonNode {
   type Name = String
   type JSON = String
 
-  def toNode(s: JSON): Try[AlpNode[_ <: Result]] =
+  def toNode(s: JSON): Try[AlpNode[_ <: AlpResult]] =
     parse(s).flatMap({
       case (name, jNode) => JsonNodeKind.toNode(name, jNode)
     })
 
-  def toNodeMap(strs: Seq[JSON]): Try[Map[String, AlpNode[_ <: Result]]] = Try(
+  def toNodeMap(strs: Seq[JSON]): Try[Map[String, AlpNode[_ <: AlpResult]]] = Try(
     strs.map(s =>
       toNode(s) match {
         case Success(node) =>
@@ -33,7 +33,7 @@ object JsonNode {
         case Failure(e) =>
           throw e
       }
-    ).foldLeft(Map.empty[String, AlpNode[_ <: Result]])(
+    ).foldLeft(Map.empty[String, AlpNode[_ <: AlpResult]])(
       (m, node) =>
         if (m.contains(node.id)) {
           throw new IllegalArgumentException(s"Cannot have duplicate nodes in the map. Duplicate node name/id: ${node.id}")
@@ -43,7 +43,7 @@ object JsonNode {
     )
   )
 
-  def toNodeMap(jsonNodeList: JSON): Try[Map[String, AlpNode[_ <: Result]]] =
+  def toNodeMap(jsonNodeList: JSON): Try[Map[String, AlpNode[_ <: AlpResult]]] =
     Try(Json.parse(jsonNodeList).as[List[String]]).flatMap(toNodeMap)
 
   def parse(s: JSON): Try[(Name, JsonNodeKind)] =
@@ -81,7 +81,7 @@ object JsonNodeKind {
 
   type Name = String
 
-  def toNode(name: Name, jn: JsonNodeKind): Try[AlpNode[_ <: Result]] =
+  def toNode(name: Name, jn: JsonNodeKind): Try[AlpNode[_ <: AlpResult]] =
     jn match {
       case opConf: JsonOpConfNode     => JsonOpConfNode.toNode(name, opConf)
       case opNoConf: JsonOpNoConfNode => JsonOpNoConf.toNode(name, opNoConf)
@@ -93,13 +93,13 @@ object JsonOpNoConf {
 
   type Name = String
 
-  def toNode(name: Name, jn: JsonOpNoConfNode): Try[NoConf[_ <: Result, _ <: Result]] = Try({
+  def toNode(name: Name, jn: JsonOpNoConfNode): Try[NoConf[_ <: AlpResult, _ <: AlpResult]] = Try({
 
-    val operator = Class.forName(jn.operator).newInstance.asInstanceOf[OperatorNoConf[Result, Result]]
+    val operator = Class.forName(jn.operator).newInstance.asInstanceOf[AlpOperatorNoConf[AlpResult, AlpResult]]
 
     NoConf(
       name,
-      operator.asInstanceOf[OperatorNoConf[_ <: Result, _ <: Result]]
+      operator.asInstanceOf[AlpOperatorNoConf[_ <: AlpResult, _ <: AlpResult]]
     )
   })
 
@@ -117,9 +117,9 @@ object JsonOpConfNode {
 
   type Name = String
 
-  def toNode(name: Name, jn: JsonOpConfNode): Try[Common[_ <: OpConf, _ <: Result, _ <: Result]] = Try({
+  def toNode(name: Name, jn: JsonOpConfNode): Try[Common[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]] = Try({
 
-    val operator = Class.forName(jn.operator).newInstance.asInstanceOf[Operator[OpConf, Result, Result]]
+    val operator = Class.forName(jn.operator).newInstance.asInstanceOf[AlpOperator[OpConf, AlpResult, AlpResult]]
 
     if (equalManifests(operator.configClass, manifest[NoOpConf])) {
       throw new IllegalArgumentException(s"Expecting configurable operator!")
@@ -140,8 +140,8 @@ object JsonOpConfNode {
         Common(
           name,
           configuration,
-          operator.asInstanceOf[Operator[OpConf, _ <: Result, _ <: Result]]
-        ).asInstanceOf[Common[_ <: OpConf, _ <: Result, _ <: Result]]
+          operator.asInstanceOf[AlpOperator[OpConf, _ <: AlpResult, _ <: AlpResult]]
+        ).asInstanceOf[Common[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]]
 
       case Failure(e) =>
         throw e
@@ -171,7 +171,7 @@ object JsonDataNode {
   type Name = String
 
   //case class Data[O <: AlpResult: Manifest](override val id: String, data: O) extends AlpNode[O]
-  def toNode[D <: Data[_ <: Result]](name: Name, jn: JsonDataNode): Try[Data[_ <: Result]] = Try(
+  def toNode[D <: Data[_ <: AlpResult]](name: Name, jn: JsonDataNode): Try[Data[_ <: AlpResult]] = Try(
     jn.dataType match {
       case DB   => ???
       case HDFS => ???
@@ -193,13 +193,13 @@ case class JsonConnection(nodes: Seq[String], dest: String)
 
 object JsonConnection {
 
-  def toConnection(nodeMap: Map[String, AlpNode[_ <: Result]], jc: JsonConnection): Try[Connection[_ <: OpConf, _ <: Result, _ <: Result]] = Try({
+  def toConnection(nodeMap: Map[String, AlpNode[_ <: AlpResult]], jc: JsonConnection): Try[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]] = Try({
 
     if (jc.nodes.size == 0 || nodeMap.size == 0) {
       throw new IllegalArgumentException("Connection and node map must be populated with at least two nodes.")
     }
 
-    val parentNodes: Seq[AlpNode[_ <: Result]] = {
+    val parentNodes: Seq[AlpNode[_ <: AlpResult]] = {
 
       val missingNodes = jc.nodes
         .filter(nodename => !nodeMap.contains(nodename))
@@ -224,23 +224,23 @@ object JsonConnection {
 
             val connAttempt = opNode.operator.inputClass match {
 
-              case tuple3 if tuple3 <:< manifest[ResultTuple3[Result, Result, Result]] =>
+              case tuple3 if tuple3 <:< manifest[AlpResultTuple3[AlpResult, AlpResult, AlpResult]] =>
                 Connection.forThree(
                   parentNodes,
-                  opNode.asInstanceOf[NodeOperator[OpConf, ResultTuple3[Result, Result, Result], Result]]
+                  opNode.asInstanceOf[NodeOperator[OpConf, AlpResultTuple3[AlpResult, AlpResult, AlpResult], AlpResult]]
                 )
 
-              case tuple2 if tuple2 <:< manifest[ResultTuple2[Result, Result]] =>
+              case tuple2 if tuple2 <:< manifest[AlpResultTuple2[AlpResult, AlpResult]] =>
                 Connection.forTwo(
                   parentNodes,
-                  opNode.asInstanceOf[NodeOperator[OpConf, ResultTuple2[Result, Result], Result]]
+                  opNode.asInstanceOf[NodeOperator[OpConf, AlpResultTuple2[AlpResult, AlpResult], AlpResult]]
                 )
 
               case _ =>
                 if (parentNodes.size == 1)
                   Connection.forOne(
-                    parentNodes(0).asInstanceOf[AlpNode[Result]],
-                    opNode.asInstanceOf[NodeOperator[OpConf, Result, Result]]
+                    parentNodes(0).asInstanceOf[AlpNode[AlpResult]],
+                    opNode.asInstanceOf[NodeOperator[OpConf, AlpResult, AlpResult]]
                   )
                 else
                   throw new IllegalArgumentException(s"Cannot handle operators with input arity > 3: ${opNode.operator.inputClass}")
@@ -249,7 +249,7 @@ object JsonConnection {
             connAttempt match {
 
               case Success(conn) =>
-                conn.asInstanceOf[Connection[_ <: OpConf, _ <: Result, _ <: Result]]
+                conn.asInstanceOf[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]]
 
               case Failure(e) =>
                 throw e
@@ -305,7 +305,7 @@ object JsonWorkflow {
       val (nm, errors) =
         w.nodes
           .map(jNode => JsonNode.convert(jNode))
-          .foldLeft((Map.empty[String, AlpNode[_ <: Result]], List.empty[Throwable]))({
+          .foldLeft((Map.empty[String, AlpNode[_ <: AlpResult]], List.empty[Throwable]))({
             case ((m, err), conversionAttempt) =>
               conversionAttempt match {
 
@@ -343,7 +343,7 @@ object JsonWorkflow {
       // we collect all parsing & instantiation errors while constructing the set
       val (conns, errors) = w.connections
         .map(jConn => JsonConnection.toConnection(nodeMap, jConn))
-        .foldLeft((Set.empty[Connection[_ <: OpConf, _ <: Result, _ <: Result]], List.empty[Throwable]))({
+        .foldLeft((Set.empty[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]], List.empty[Throwable]))({
           case ((connSet, errs), connAttempt) =>
             connAttempt match {
 
@@ -366,7 +366,7 @@ object JsonWorkflow {
     (
       w.flowName,
       Workflow.create(
-        nodeMap.foldLeft(Set.empty[AlpNode[_ <: Result]])({
+        nodeMap.foldLeft(Set.empty[AlpNode[_ <: AlpResult]])({
           case (nodeSet, (_, node)) => nodeSet + node
         }),
         connections

@@ -5,80 +5,80 @@ import scala.reflect.Manifest
 import java.io.File
 
 /** Input and output type (class?) for Alpine operators */
-abstract class Result extends Serializable
+abstract class AlpResult extends Serializable
 
-case class ResultTuple2[A <: Result, B <: Result](
+case class AlpResultTuple2[A <: AlpResult, B <: AlpResult](
   override val _1: A,
-  override val _2: B) extends Result with Product2[A, B]
+  override val _2: B) extends AlpResult with Product2[A, B]
 
-case class ResultTuple3[A <: Result, B <: Result, C <: Result](
+case class AlpResultTuple3[A <: AlpResult, B <: AlpResult, C <: AlpResult](
   override val _1: A,
   override val _2: B,
-  override val _3: C) extends Result with Product3[A, B, C]
+  override val _3: C) extends AlpResult with Product3[A, B, C]
 
-object Result {
+object AlpResult {
 
-  implicit def tuple2[A <: Result, B <: Result](input: (A, B)): ResultTuple2[A, B] =
-    ResultTuple2(input._1, input._2)
+  implicit def tuple2[A <: AlpResult, B <: AlpResult](input: (A, B)): AlpResultTuple2[A, B] =
+    AlpResultTuple2(input._1, input._2)
 
-  implicit def tuple3[A <: Result, B <: Result, C <: Result](input: (A, B, C)): ResultTuple3[A, B, C] =
-    ResultTuple3(input._1, input._2, input._3)
+  implicit def tuple3[A <: AlpResult, B <: AlpResult, C <: AlpResult](input: (A, B, C)): AlpResultTuple3[A, B, C] =
+    AlpResultTuple3(input._1, input._2, input._3)
 
 }
 
 /** node type for workflow */
-sealed abstract class AlpNode[+O <: Result: Manifest] {
+sealed abstract class AlpNode[+O <: AlpResult: Manifest] {
 
   def id: String
 
   val nodeType: Manifest[_ <: O]
 }
 
-case class Data[+O <: Result: Manifest](override val id: String, data: O) extends AlpNode[O] {
+case class Data[+O <: AlpResult: Manifest](override val id: String, data: O) extends AlpNode[O] {
   override val nodeType: Manifest[_ <: O] = manifest[O]
 }
 
 /** Node type for non-leaves in workflow */
 
-sealed abstract class NodeOperator[C <: OpConf, -I <: Result: Manifest, +O <: Result: Manifest] extends AlpNode[O] {
-  def operator: Operator[C, I, O]
+sealed abstract class NodeOperator[C <: OpConf, -I <: AlpResult: Manifest, +O <: AlpResult: Manifest] extends AlpNode[O] {
+  def operator: AlpOperator[C, I, O]
   def config: C
 }
 
-case class NoConf[-I <: Result: Manifest, +O <: Result: Manifest](
+case class NoConf[-I <: AlpResult: Manifest, +O <: AlpResult: Manifest](
     override val id: String,
-    override val operator: Operator[NoOpConf, I, O]) extends NodeOperator[NoOpConf, I, O] {
+    override val operator: AlpOperator[NoOpConf, I, O]) extends NodeOperator[NoOpConf, I, O] {
 
   override val config = NoOpConf.instance
   override val nodeType: Manifest[_ <: O] = operator.outputClass
 }
 
-case class Common[C <: OpConf, -I <: Result: Manifest, +O <: Result: Manifest](
+case class Common[C <: OpConf, -I <: AlpResult: Manifest, +O <: AlpResult: Manifest](
     override val id: String,
     config: C,
-    override val operator: Operator[C, I, O]) extends NodeOperator[C, I, O] {
+    override val operator: AlpOperator[C, I, O]) extends NodeOperator[C, I, O] {
 
   override val nodeType: Manifest[_ <: O] = operator.outputClass
 }
 
 /** A model trained by an operator */
-abstract class Model extends Result
+abstract class AlpModel extends AlpResult
 
 /** A result from an operator that is stored in memory. I.e. not a dataset or a model, more like a UI chart. */
-final case class FinalResult[T](get: T) extends Result
+final case class AlpFinalResult[T](get: T) extends AlpResult
 
-object FinalResult {
-  implicit def final2T[T](x: FinalResult[T]): T = x.get
+object AlpFinalResult {
+  implicit def final2T[T](x: AlpFinalResult[T]): T = x.get
 }
 
 /** Trait to describe a result produced by an operator that is itself a dataset */
-sealed trait Data extends Result
+sealed trait AlpData extends AlpResult
 
-trait StructuredData extends Data {
+trait StructuredData extends AlpData {
   def colInfo: ColumnInfo
 }
 
-case class LocalData(path: File) extends Data
+case class LocalData(path: File) extends AlpData
 
 /** Describes the columns of a dataset. */
 trait ColumnInfo {
@@ -105,18 +105,18 @@ case class HadoopFile(fiName: String, fiDir: Path, hostport: (String, Int) = (""
 }
 
 /** Column information for a single HDFS file as dataset */
-case class SingleHDFSData(colInfo: ColumnInfo, fi: HadoopFile) extends Data
+case class AlpSingleHDFSData(colInfo: ColumnInfo, fi: HadoopFile) extends AlpData
 
 /**
  * Column information for a dataset spread about multiple HDFS files. Shards are assumed to contain data in
  * sequential order. I.e. fis(k) ==> fis(k+1) is a continuous part of the original data.
  */
-case class MultiHDFSData(colInfo: ColumnInfo, fis: IndexedSeq[HadoopFile]) extends Data
+case class AlpMultiHDFSData(colInfo: ColumnInfo, fis: IndexedSeq[HadoopFile]) extends AlpData
 
 /**
  * Represents a script that could be executed at any moment (access w/ script:T) and can be combined
  * with another script sub-type.
  */
-trait Script extends Result {
+trait AlpScript extends AlpResult {
   def script: String
 }

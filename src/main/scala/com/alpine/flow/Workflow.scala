@@ -6,25 +6,25 @@ import scala.reflect.Manifest
 
 sealed trait Workflow {
 
-  def contains(n: AlpNode[_ <: Result]): Boolean
+  def contains(n: AlpNode[_ <: AlpResult]): Boolean
 
-  def predecessorsOf[C <: OpConf: Manifest, I <: Result: Manifest, O <: Result: Manifest](n: AlpNode[O]): Option[Connection[C, I, O]]
+  def predecessorsOf[C <: OpConf: Manifest, I <: AlpResult: Manifest, O <: AlpResult: Manifest](n: AlpNode[O]): Option[Connection[C, I, O]]
 
-  def foreach[U](f: AlpNode[_ <: Result] => U): Unit
+  def foreach[U](f: AlpNode[_ <: AlpResult] => U): Unit
 
-  def leaves: Set[AlpNode[_ <: Result]]
+  def leaves: Set[AlpNode[_ <: AlpResult]]
 
-  def foldLeft[U](zero: U)(combOp: (U, AlpNode[_ <: Result]) => U): U
+  def foldLeft[U](zero: U)(combOp: (U, AlpNode[_ <: AlpResult]) => U): U
 
-  def replace(inWorkflow: AlpNode[_ <: Result], newNode: AlpNode[_ <: Result]): Try[Workflow]
+  def replace(inWorkflow: AlpNode[_ <: AlpResult], newNode: AlpNode[_ <: AlpResult]): Try[Workflow]
 
 }
 
 object Workflow {
 
   def create(
-    nodes: Set[AlpNode[_ <: Result]],
-    connections: Set[Connection[_ <: OpConf, _ <: Result, _ <: Result]]): Try[Workflow] = Try({
+    nodes: Set[AlpNode[_ <: AlpResult]],
+    connections: Set[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]]): Try[Workflow] = Try({
 
     // make sure that all of the nodes specified in each connection are contained in the nodeset
     // incldues Connection.nodes as well as Connection.destination
@@ -57,7 +57,7 @@ object Workflow {
 
       } else {
 
-        val parents = connections.foldLeft(Map.empty[String, AlpNode[_ <: Result]])(
+        val parents = connections.foldLeft(Map.empty[String, AlpNode[_ <: AlpResult]])(
           (parents, conn) => conn.nodes.foldLeft(parents)(
             (p, n) =>
               if (p.contains(n.id))
@@ -70,7 +70,7 @@ object Workflow {
         val leavesOfPaths =
           connections
             // get all of the destinations that occur in the workflow
-            .foldLeft(Map.empty[String, AlpNode[_ <: Result]])(
+            .foldLeft(Map.empty[String, AlpNode[_ <: AlpResult]])(
               (dests, conn) =>
                 if (dests.contains(conn.destination.id))
                   dests
@@ -100,22 +100,22 @@ object Workflow {
 
       private val nodeIDs = nodes.map(_.id)
 
-      override def predecessorsOf[C <: OpConf: Manifest, I <: Result: Manifest, O <: Result: Manifest](n: AlpNode[O]): Option[Connection[C, I, O]] =
+      override def predecessorsOf[C <: OpConf: Manifest, I <: AlpResult: Manifest, O <: AlpResult: Manifest](n: AlpNode[O]): Option[Connection[C, I, O]] =
         child2parents.get(mkKeyConnection[C, I, O](n))
 
-      override def contains(n: AlpNode[_ <: Result]): Boolean =
+      override def contains(n: AlpNode[_ <: AlpResult]): Boolean =
         nodeIDs.contains(n.id)
 
-      override def foreach[U](f: AlpNode[_ <: Result] => U): Unit =
+      override def foreach[U](f: AlpNode[_ <: AlpResult] => U): Unit =
         nodes.foreach(f)
 
-      override val leaves: Set[AlpNode[_ <: Result]] =
+      override val leaves: Set[AlpNode[_ <: AlpResult]] =
         leafNodes
 
-      override def foldLeft[U](zero: U)(combOp: (U, AlpNode[_ <: Result]) => U): U =
+      override def foldLeft[U](zero: U)(combOp: (U, AlpNode[_ <: AlpResult]) => U): U =
         nodes.foldLeft(zero)(combOp)
 
-      override def replace(inWorkflow: AlpNode[_ <: Result], newNode: AlpNode[_ <: Result]): Try[Workflow] = Try({
+      override def replace(inWorkflow: AlpNode[_ <: AlpResult], newNode: AlpNode[_ <: AlpResult]): Try[Workflow] = Try({
 
         if (contains(inWorkflow) && Util.equalManifests(inWorkflow.nodeType, newNode.nodeType)) {
 
@@ -124,13 +124,13 @@ object Workflow {
           predecessorsOf(inWorkflow) match {
 
             case Some(conn) =>
-              conn.replaceDestination(newNode.asInstanceOf[NodeOperator[OpConf, Result, Result]]) match {
+              conn.replaceDestination(newNode.asInstanceOf[NodeOperator[OpConf, AlpResult, AlpResult]]) match {
 
                 case Success(newConn) =>
 
                   val newConnections =
                     (connections.filter(conn => conn.destination.id != newNode.id) + newConn)
-                      .foldLeft(Set.empty[Connection[_ <: OpConf, _ <: Result, _ <: Result]])({
+                      .foldLeft(Set.empty[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]])({
                         case (news, connect) => {
                           connect.replaceParent(inWorkflow, newNode) match {
                             case Success(replaced) =>
@@ -150,7 +150,7 @@ object Workflow {
             case None =>
               val newConnections =
                 connections.filter(conn => conn.destination.id != newNode.id)
-                  .foldLeft(Set.empty[Connection[_ <: OpConf, _ <: Result, _ <: Result]])({
+                  .foldLeft(Set.empty[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]])({
                     case (news, connect) => {
                       connect.replaceParent(inWorkflow, newNode) match {
                         case Success(replaced) =>
@@ -173,7 +173,7 @@ object Workflow {
 
   })
 
-  @inline private def mkKeyConnection[C <: OpConf: Manifest, I <: Result: Manifest, O <: Result: Manifest](n: AlpNode[O]): MapKey[AlpNode[O], Connection[C, I, O]] =
+  @inline private def mkKeyConnection[C <: OpConf: Manifest, I <: AlpResult: Manifest, O <: AlpResult: Manifest](n: AlpNode[O]): MapKey[AlpNode[O], Connection[C, I, O]] =
     MapKey(n)
 
 }

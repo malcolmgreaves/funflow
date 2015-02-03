@@ -21,12 +21,12 @@ class CompilerTest extends FunSuite {
     val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr")
     val x = clazz.newInstance()
     println(s"loaded class: $x")
-    val a = FinalResult(Map("hello" -> 1))
+    val a = AlpFinalResult(Map("hello" -> 1))
     val prex = x.asInstanceOf[() => Any]
     println(s"cased class, prex: $prex")
     val res = prex.apply()
     println(s"prex.apply(): $res")
-    val xer = res.asInstanceOf[(FinalResult[Map[String, Int]] => FinalResult[Map[String, Int]])]
+    val xer = res.asInstanceOf[(AlpFinalResult[Map[String, Int]] => AlpFinalResult[Map[String, Int]])]
     xer.apply(a)
 
   }
@@ -37,19 +37,19 @@ class CompilerTest extends FunSuite {
     val compiler = new Compiler(None)
     val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr")
     val func = clazz.newInstance().asInstanceOf[() => Any].apply()
-      .asInstanceOf[(FinalResult[Map[String, Int]] => FinalResult[Map[String, Int]])]
+      .asInstanceOf[(AlpFinalResult[Map[String, Int]] => AlpFinalResult[Map[String, Int]])]
     val newNode =
       NoConf(
         "dynamic yo!",
-        Operator.fn2opNoConf(func)
-      ).asInstanceOf[NodeOperator[NoOpConf, Result, FinalResult[Map[String, Int]]]]
+        AlpOperator.fn2opNoConf(func)
+      ).asInstanceOf[NodeOperator[NoOpConf, AlpResult, AlpFinalResult[Map[String, Int]]]]
 
-    val connections: Seq[Connection[_ <: OpConf, _ <: Result, _ <: Result]] = {
+    val connections: Seq[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]] = {
       val nm = nodeMap // + (newNode.id -> newNode)
       connectionsJson.map(s => JsonConnection.toConnection(nm, s).get)
     }
 
-    val newConnection: Connection[_ <: OpConf, _ <: Result, _ <: Result] =
+    val newConnection: Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult] =
       Connection.forOne(connections(connections.size - 1).destination, newNode) match {
         case Success(c) =>
           c
@@ -82,11 +82,11 @@ class CompilerTest extends FunSuite {
           | (a:AlpFinalResult[Map[String,Int]]) => {println("hello world!!!"); NewAlpResult(a)}""".stripMargin.trim
       val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr1")
       val func = clazz.newInstance().asInstanceOf[() => Any].apply()
-        .asInstanceOf[(FinalResult[Map[String, Int]] => _ <: Result)]
+        .asInstanceOf[(AlpFinalResult[Map[String, Int]] => _ <: AlpResult)]
       NoConf(
         "1 dynamic yo!",
-        Operator.fn2opNoConf(func)
-      ).asInstanceOf[NodeOperator[NoOpConf, Result, Result]]
+        AlpOperator.fn2opNoConf(func)
+      ).asInstanceOf[NodeOperator[NoOpConf, AlpResult, AlpResult]]
     }
 
     val newNode2 = {
@@ -98,19 +98,19 @@ class CompilerTest extends FunSuite {
         """.stripMargin.trim
       val clazz = compiler.compile(s"import org.alpine.flow._; $funcStr2")
       val func = clazz.newInstance().asInstanceOf[() => Any].apply()
-        .asInstanceOf[(Result => _ <: Result)]
+        .asInstanceOf[(AlpResult => _ <: AlpResult)]
       NoConf(
         "2 dynamic yo!",
-        Operator.fn2opNoConf(func)
-      ).asInstanceOf[NodeOperator[NoOpConf, Result, Result]]
+        AlpOperator.fn2opNoConf(func)
+      ).asInstanceOf[NodeOperator[NoOpConf, AlpResult, AlpResult]]
     }
 
-    val connections: Seq[Connection[_ <: OpConf, _ <: Result, _ <: Result]] = {
+    val connections: Seq[Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult]] = {
       val nm = nodeMap // + (newNode.id -> newNode)
       connectionsJson.map(s => JsonConnection.toConnection(nm, s).get)
     }
 
-    val newConnection1: Connection[_ <: OpConf, _ <: Result, _ <: Result] =
+    val newConnection1: Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult] =
       Connection.forOne(connections(connections.size - 1).destination, newNode1) match {
         case Success(c) =>
           c
@@ -118,7 +118,7 @@ class CompilerTest extends FunSuite {
           throw new Exception(s"Failed to create connection with new dynamically generated node: $e")
       }
 
-    val newConnection2: Connection[_ <: OpConf, _ <: Result, _ <: Result] =
+    val newConnection2: Connection[_ <: OpConf, _ <: AlpResult, _ <: AlpResult] =
       Connection.forOne(newNode1, newNode2) match {
         case Success(c) =>
           c

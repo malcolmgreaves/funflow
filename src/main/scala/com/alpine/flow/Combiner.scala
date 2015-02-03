@@ -1,14 +1,14 @@
-package com.alpine.flow
+package org.alpine.flow
 
 import scala.util.Try
 
 import scala.reflect.Manifest
 
-sealed abstract class Connection[C <: OpConf: Manifest, -A <: Result: Manifest, +B <: Result: Manifest] {
+sealed abstract class Connection[C <: OpConf: Manifest, -A <: AlpResult: Manifest, +B <: AlpResult: Manifest] {
   /* exactly the number required for destination's input */
-  def nodes: Seq[AlpNode[_ <: Result]]
+  def nodes: Seq[AlpNode[_ <: AlpResult]]
 
-  def replaceParent(oldParent: AlpNode[_ <: Result], newParent: AlpNode[_ <: Result]): Try[Connection[C, A, B]] = Try(
+  def replaceParent(oldParent: AlpNode[_ <: AlpResult], newParent: AlpNode[_ <: AlpResult]): Try[Connection[C, A, B]] = Try(
 
     if (nodes.map(_.id).contains(oldParent.id) && Util.equalManifests(oldParent.nodeType, newParent.nodeType)) {
 
@@ -33,7 +33,7 @@ sealed abstract class Connection[C <: OpConf: Manifest, -A <: Result: Manifest, 
 
   def destination: NodeOperator[C, A, B]
 
-  final def replaceDestination(newDestination: NodeOperator[OpConf, Result, Result]): Try[Connection[C, A, B]] = Try(
+  final def replaceDestination(newDestination: NodeOperator[OpConf, AlpResult, AlpResult]): Try[Connection[C, A, B]] = Try(
 
     if (Util.equalManifests(newDestination.operator.inputClass, destination.operator.inputClass)
       && Util.equalManifests(newDestination.operator.configClass, destination.operator.configClass)
@@ -61,7 +61,7 @@ object Connection {
   private def error(n: Any, i: Any): Exception =
     new IllegalArgumentException(s"incorrect Node type for Operator's input.\tNode(s) Type: $n\tOperator Input: $i")
 
-  def forOne[C <: OpConf: Manifest, A <: Result: Manifest, Z <: Result: Manifest](
+  def forOne[C <: OpConf: Manifest, A <: AlpResult: Manifest, Z <: AlpResult: Manifest](
     node: AlpNode[A],
     destFunc: NodeOperator[C, A, Z]): Try[Connection[C, A, Z]] = Try(
 
@@ -75,14 +75,14 @@ object Connection {
     }
   )
 
-  def forTwo[C <: OpConf: Manifest, A <: Result: Manifest, B <: Result: Manifest, Z <: Result: Manifest](
-    nodez: Seq[AlpNode[_ <: Result]],
-    destFunc: NodeOperator[C, ResultTuple2[A, B], Z]): Try[Connection[C, ResultTuple2[A, B], Z]] = Try(
+  def forTwo[C <: OpConf: Manifest, A <: AlpResult: Manifest, B <: AlpResult: Manifest, Z <: AlpResult: Manifest](
+    nodez: Seq[AlpNode[_ <: AlpResult]],
+    destFunc: NodeOperator[C, AlpResultTuple2[A, B], Z]): Try[Connection[C, AlpResultTuple2[A, B], Z]] = Try(
 
     if (nodez.size == 2
       && equalManifests(nodez(0).nodeType, manifest[A])
       && equalManifests(nodez(1).nodeType, manifest[B])) {
-      new Connection[C, ResultTuple2[A, B], Z] {
+      new Connection[C, AlpResultTuple2[A, B], Z] {
         override val nodes = nodez
         override val destination = destFunc
       }
@@ -92,15 +92,15 @@ object Connection {
     }
   )
 
-  def forThree[CO <: OpConf: Manifest, A <: Result: Manifest, B <: Result: Manifest, C <: Result: Manifest, Z <: Result: Manifest](
-    nodez: Seq[AlpNode[_ <: Result]],
-    destFunc: NodeOperator[CO, ResultTuple3[A, B, C], Z]): Try[Connection[CO, ResultTuple3[A, B, C], Z]] = Try(
+  def forThree[CO <: OpConf: Manifest, A <: AlpResult: Manifest, B <: AlpResult: Manifest, C <: AlpResult: Manifest, Z <: AlpResult: Manifest](
+    nodez: Seq[AlpNode[_ <: AlpResult]],
+    destFunc: NodeOperator[CO, AlpResultTuple3[A, B, C], Z]): Try[Connection[CO, AlpResultTuple3[A, B, C], Z]] = Try(
 
     if (nodez.size == 3
       && equalManifests(nodez(0).nodeType, manifest[A])
       && equalManifests(nodez(1).nodeType, manifest[B])
       && equalManifests(nodez(2).nodeType, manifest[C])) {
-      new Connection[CO, ResultTuple3[A, B, C], Z] {
+      new Connection[CO, AlpResultTuple3[A, B, C], Z] {
         override val nodes = nodez
         override val destination = destFunc
       }

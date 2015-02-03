@@ -14,7 +14,7 @@ final case class ResultsFlow(
     wf: Workflow,
     nodesWithResults: TypedMap = TypedMap.empty)(implicit val executionContext: ExecutionContext) {
 
-  def execute[T <: Result: Manifest](n: AlpNode[T]): Try[(Future[T], ResultsFlow)] =
+  def execute[T <: AlpResult: Manifest](n: AlpNode[T]): Try[(Future[T], ResultsFlow)] =
     if (wf.contains(n)) {
 
       val nodeKey = mkKey(n)
@@ -33,11 +33,11 @@ final case class ResultsFlow(
       Failure(nodeNotFound(n))
     }
 
-  private def nodeNotFound(n: AlpNode[_ <: Result]) =
+  private def nodeNotFound(n: AlpNode[_ <: AlpResult]) =
     new IllegalArgumentException(s"node $n not found in workflow")
 
   /** WARNING: Throws IllegalStateException if there is a non-leaf node with no children in the Workflow! */
-  private def execute_h[B <: Result: Manifest](n: AlpNode[B]): Future[B] =
+  private def execute_h[B <: AlpResult: Manifest](n: AlpNode[B]): Future[B] =
     nodesWithResults.get(mkKey(n)) match {
 
       case Some(r) =>
@@ -51,10 +51,10 @@ final case class ResultsFlow(
             Future.successful(data)
 
           // node is an operator
-          case other: NodeOperator[OpConf, Result, B] => {
+          case other: NodeOperator[OpConf, AlpResult, B] => {
 
             // extract the operator from the node
-            val operator: Result => B =
+            val operator: AlpResult => B =
               other.operator.curried(other.config)
 
             wf.predecessorsOf(n) match {
@@ -65,11 +65,11 @@ final case class ResultsFlow(
                   // then combine these results into an input that our operator can accept
                   .map(results =>
                     parentConnection.destination.operator.inputClass match {
-                      case tuple3 if tuple3 <:< manifest[ResultTuple3[_, _, _]] =>
-                        ResultTuple3(results(0), results(1), results(2))
+                      case tuple3 if tuple3 <:< manifest[AlpResultTuple3[_, _, _]] =>
+                        AlpResultTuple3(results(0), results(1), results(2))
 
-                      case tuple2 if tuple2 <:< manifest[ResultTuple2[_, _]] =>
-                        ResultTuple2(results(0), results(1))
+                      case tuple2 if tuple2 <:< manifest[AlpResultTuple2[_, _]] =>
+                        AlpResultTuple2(results(0), results(1))
 
                       case _ =>
                         results(0)
@@ -84,9 +84,9 @@ final case class ResultsFlow(
         }
     }
 
-  def clearCachedResults(ns: AlpNode[T forSome { type T <: Result }]*): ResultsFlow =
+  def clearCachedResults(ns: AlpNode[T forSome { type T <: AlpResult }]*): ResultsFlow =
     this.copy(nodesWithResults = ns.foldLeft(this.nodesWithResults)((mm, n) => mm - mkKey(n)))
 
-  @inline private[flow] def mkKey[T <: Result](n: AlpNode[T]): MapKey[AlpNode[T], Future[T]] =
+  @inline private[flow] def mkKey[T <: AlpResult](n: AlpNode[T]): MapKey[AlpNode[T], Future[T]] =
     MapKey(n)
 }

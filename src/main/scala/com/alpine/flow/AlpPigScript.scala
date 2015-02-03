@@ -1,26 +1,26 @@
 package org.alpine.flow
 
 /** Is a Pig script */
-sealed case class PigScript(
-    loadScripts: IndexedSeq[PigScript.LoadLine],
-    linesAfterLoad: IndexedSeq[PigScript.ScriptLine]) extends Script {
+sealed case class AlpPigScript(
+    loadScripts: IndexedSeq[AlpPigScript.LoadLine],
+    linesAfterLoad: IndexedSeq[AlpPigScript.ScriptLine]) extends AlpScript {
 
-  import PigScript._
+  import AlpPigScript._
 
   override lazy val script: String = {
     (if (loadScripts.size > 0) loadScripts.map(_.toString).mkString("\n") + "\n" else "") +
       linesAfterLoad.map(_.toString).mkString("\n")
   }
 
-  def combine(other: PigScript): PigScript = {
-    PigScript(
+  def combine(other: AlpPigScript): AlpPigScript = {
+    AlpPigScript(
       takeCommonInSequence(loadScripts, other.loadScripts),
       takeCommonInSequence(linesAfterLoad, other.linesAfterLoad)
     )
   }
 }
 
-object PigScript {
+object AlpPigScript {
 
   trait ScriptLine extends {
     def varName: String
