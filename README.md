@@ -13,14 +13,14 @@ We recommend using the following sbt options:
 	 SBT_OPTS="-Xmx2G -XX:MaxPermSize=724M  -XX:+UseConcMarkSweepGC  -XX:+CMSClassUnloadingEnabled
 
 These are the sbt commands used in this project:
-*  test => runs unittests in src/test
-*  scalariformFormat => runs automatic code formatting (all code in the master branch *must* be formatted) (test:scalariformFormat formats tests)
-*  compile => compiles code in src/main (test:compile complies tests)
-*  pack => packages all dependencies and the project code into a folder and creates a shell script that allows one to execute main() methods in the project. Used for installing this project.
-*  update => downloads all dependencies
-*  reload => When in an interactive sbt session, reload will parse and load the build.sbt file. This is very useful when updating dependencies or adding plugins. (start an interactive sessions by invoking sbt with no commands: ./sbt)
-*  gen-idea => makes project files for Intellij IDEA 
-*  eclipse => makes project files for Eclipse
+*  **test** => runs unittests in src/test
+*  **scalariformFormat** => runs automatic code formatting (all code in the master branch *must* be formatted) (test:scalariformFormat formats tests)
+*  **compile** => compiles code in src/main (test:compile complies tests)
+*  **pack** => packages all dependencies and the project code into a folder and creates a shell script that allows one to execute main() methods in the project. Used for installing this project.
+*  **update** => downloads all dependencies
+*  **reload** => When in an interactive sbt session, reload will parse and load the build.sbt file. This is very useful when updating dependencies or adding plugins. (start an interactive sessions by invoking sbt with no commands: ./sbt)
+*  **gen-idea** => makes project files for Intellij IDEA 
+*  **eclipse** => makes project files for Eclipse
 
 
 All material in this project is licensed under the Apache 2.0 license. By using this code you must agree to the terms of this license as specified in the LICENSE file.
