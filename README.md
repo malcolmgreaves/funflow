@@ -19,3 +19,6 @@ These are the sbt commands used in this project:
 *  reload => When in an interactive sbt session, reload will parse and load the build.sbt file. This is very useful when updating dependencies or adding plugins. (start an interactive sessions by invoking sbt with no commands: ./sbt)
 *  gen-idea => makes project files for Intellij IDEA 
 *  eclipse => makes project files for Eclipse
+
+
+All material in this project is licensed under the Apache 2.0 license. By using this code you must agree to the terms of this license as specified in the LICENSE file.
