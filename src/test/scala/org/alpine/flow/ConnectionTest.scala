@@ -19,9 +19,9 @@ class ConnectionTest extends FunSuite {
 
       case Success(conn) =>
         val newDestination = {
-          def op(ignore: NoOpConf, l: LocalData): RDDAlpResult[String] =
+          def op(ignore: NoOpConf, l: LocalData): RDDResult[String] =
             throw new RuntimeException("just type checking, no invoking")
-          NoConf[LocalData, RDDAlpResult[String]](conn.destination.id, Operator.fn2op(op))
+          NoConf[LocalData, RDDResult[String]](conn.destination.id, Operator.fn2op(op))
         }
         conn.replaceDestination(newDestination.asInstanceOf[OperatorNode[OpConf, Result, Result]])
 

@@ -115,25 +115,25 @@ object LocalData2RDD {
   }
 }
 
-class LocalData2RDD extends OperatorNoConf[LocalData, RDDAlpResult[String]] {
+class LocalData2RDD extends OperatorNoConf[LocalData, RDDResult[String]] {
 
   import LocalData2RDD.sc
 
-  protected def applyActual(input: LocalData): RDDAlpResult[String] =
-    RDDAlpResult(sc.textFile(input.path.getCanonicalPath))
+  protected def applyActual(input: LocalData): RDDResult[String] =
+    RDDResult(sc.textFile(input.path.getCanonicalPath))
 }
 
-case class RDDAlpResult[T](d: RDD[T]) extends Result
+case class RDDResult[T](d: RDD[T]) extends Result
 
-class String2TokensOp extends OperatorNoConf[RDDAlpResult[String], RDDAlpResult[List[String]]] {
+class String2TokensOp extends OperatorNoConf[RDDResult[String], RDDResult[List[String]]] {
 
-  override def applyActual(in: RDDAlpResult[String]): RDDAlpResult[List[String]] =
-    RDDAlpResult(in.d.map(_.split(" ").toList))
+  override def applyActual(in: RDDResult[String]): RDDResult[List[String]] =
+    RDDResult(in.d.map(_.split(" ").toList))
 }
 
-class Tokens2DictOp extends OperatorNoConf[RDDAlpResult[List[String]], WrapResult[Map[String, Int]]] {
+class Tokens2DictOp extends OperatorNoConf[RDDResult[List[String]], WrapResult[Map[String, Int]]] {
 
-  override def applyActual(input: RDDAlpResult[List[String]]): WrapResult[Map[String, Int]] =
+  override def applyActual(input: RDDResult[List[String]]): WrapResult[Map[String, Int]] =
     WrapResult(
       input.d.aggregate(Map.empty[String, Int])(
         (m, tokens) =>
@@ -157,10 +157,10 @@ class Tokens2DictOp extends OperatorNoConf[RDDAlpResult[List[String]], WrapResul
 }
 
 abstract class JoinOp[A: ClassTag: Manifest, B: ClassTag: Manifest, C: ClassTag: Manifest]
-    extends OperatorNoConf[ResultTuple2[RDDAlpResult[A], RDDAlpResult[B]], RDDAlpResult[C]] {
+    extends OperatorNoConf[ResultTuple2[RDDResult[A], RDDResult[B]], RDDResult[C]] {
 
-  override final def applyActual(input: ResultTuple2[RDDAlpResult[A], RDDAlpResult[B]]): RDDAlpResult[C] =
-    RDDAlpResult(input._1.d.zip(input._2.d).flatMap(join))
+  override final def applyActual(input: ResultTuple2[RDDResult[A], RDDResult[B]]): RDDResult[C] =
+    RDDResult(input._1.d.zip(input._2.d).flatMap(join))
 
   def join(input: (A, B)): Option[C]
 }
