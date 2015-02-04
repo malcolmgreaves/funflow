@@ -1,11 +1,18 @@
 package org.alpine.flow
 
 import _root_.io.netty.util.internal.logging.{ Slf4JLoggerFactory, InternalLoggerFactory }
-import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd._
 
 import scala.reflect.ClassTag
-import org.apache.spark.{ SparkConf, SparkContext }
+import org.apache.spark.{ HashPartitioner, SparkConf, SparkContext }
 import org.apache.log4j.{ Logger, Level }
+import java.util.Random
+import org.alpine.flow.LocalData
+import scala.Some
+import org.alpine.flow.ResultTuple2
+import org.alpine.flow.ResultTuple3
+import org.alpine.flow.RDDResult
+import org.apache.spark.util.Utils
 
 trait OpConf
 
@@ -122,8 +129,6 @@ class LocalData2RDD extends OperatorNoConf[LocalData, RDDResult[String]] {
   protected def applyActual(input: LocalData): RDDResult[String] =
     RDDResult(sc.textFile(input.path.getCanonicalPath))
 }
-
-case class RDDResult[T](d: RDD[T]) extends Result
 
 class String2TokensOp extends OperatorNoConf[RDDResult[String], RDDResult[List[String]]] {
 
