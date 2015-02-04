@@ -1,5 +1,9 @@
 name := "funflow"
 
+licenses := Seq("Apache 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+
+homepage :+ Some(url(https://github.com/malcolmgreaves/funflow))
+
 version := "0.1"
 
 organization := "alpine"
@@ -12,8 +16,7 @@ resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
   "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
   "Akka Repository" at "http://repo.akka.io/releases/",
-  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-  "Twitter Repository" at "http://maven.twttr.com/"
+  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
 libraryDependencies ++= Seq(
@@ -29,7 +32,6 @@ libraryDependencies ++= Seq(
   // "org.scalanlp" % "chalk" % "1.2.0",
   "org.apache.spark" %% "spark-core" % "1.2.0",
   "org.apache.spark" %% "spark-mllib" % "1.2.0",
-  "com.twitter" % "util-eval" % "6.5.0",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 )
 

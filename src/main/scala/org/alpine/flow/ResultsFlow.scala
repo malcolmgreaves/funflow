@@ -48,7 +48,7 @@ final case class ResultsFlow(
 
           // node is a data source
           case DataNode(_, data) =>
-            Future.successful(data)
+            Future(data)
 
           // node is an operator
           case other: OperatorNode[OpConf, Result, B] => {

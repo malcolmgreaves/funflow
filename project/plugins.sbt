@@ -9,3 +9,5 @@ addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.5.0")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.6.5") 
+
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")

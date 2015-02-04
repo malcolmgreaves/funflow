@@ -54,7 +54,7 @@ object JsonConnection {
               case _ =>
                 if (parentNodes.size == 1)
                   Connection.forOne(
-                    parentNodes(0).asInstanceOf[Node[Result]],
+                    parentNodes(0),
                     opNode.asInstanceOf[OperatorNode[OpConf, Result, Result]]
                   )
                 else
