@@ -4,13 +4,14 @@ import scala.reflect.ClassTag
 import java.io.File
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Partitioner, HashPartitioner }
+import org.alpine.db.DBConnection
 
 /** Input and output type (class?) for Alpine operators */
 sealed abstract class Result extends Serializable
 
 sealed trait DataResult extends Result
 
-final case class DBData(schema:String, table:String) extends DataResult
+final case class DBData(schema: String, table: String, connection: DBConnection) extends DataResult
 
 final case class LocalData(path: File) extends DataResult
 
